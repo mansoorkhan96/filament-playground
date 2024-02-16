@@ -3,7 +3,7 @@
 Clone repo:
 
 ```
-git clone
+git clone https://github.com/mansoorkhan96/filament-playground.git
 ```
 
 Install dependencies:
