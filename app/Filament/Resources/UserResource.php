@@ -4,16 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
-use Filament\Actions\StaticAction;
+use App\Services\UrlUploadedFile;
 use Filament\Forms;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
-use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\HtmlString;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class UserResource extends Resource
 {
@@ -26,29 +24,28 @@ class UserResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
-                    ->hintAction(
-                        Action::make('generate-name')
-                            ->modalSubmitAction(fn (StaticAction $action) => $action->hidden())
-                            ->modalContent(fn ($record) => new HtmlString(Blade::render("@livewire('name-generator')")))
-                            ->action(function (Set $set, $record, $arguments) {
-                                // dd($arguments);
-                                // It should receive the selected name but the $arguements is empty
-                                // Howerver, it's working fine in older versions of Filament such as v3.0.62
-
-                                $set('name', $arguments['name']);
-                            })
-
-                    )
                     ->required()
                     ->maxLength(255),
+
+                Forms\Components\FileUpload::make('avatar')
+                    ->image()
+                    ->hintAction(
+                        \Filament\Forms\Components\Actions\Action::make('upload_from_url')
+                            ->action(function (FileUpload $component) {
+                                $url = 'https://via.placeholder.com/150x150';
+
+                                $filePath = UrlUploadedFile::createFromUrl($url)
+                                    ->store('livewire-tmp', ['disk' => 'local']);
+
+                                $filePath = explode('/', $filePath)[1];
+
+                                $file = TemporaryUploadedFile::createFromLivewire($filePath);
+
+                                $component->state([$file]);
+                            })),
                 Forms\Components\TextInput::make('email')
                     ->email()
                     ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('password')
-                    ->password()
-                    ->required()
-                    ->minLength(8)
                     ->maxLength(255),
             ]);
     }
